@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FamiLink Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>FamiLink Dashboard</h1>
+        <p>Stay connected with loved ones through your interactive companion device</p>
+    </header>
+
+    <nav>
+        <button onclick="showSection('status')">Device Status</button>
+        <button onclick="showSection('activity')">Activity & Suggestions</button>
+        <button onclick="showSection('messages')">Messages</button>
+        <button onclick="showSection('settings')">Settings</button>
+    </nav>
+
+    <!-- Device Status Section -->
+    <section id="status" class="section active">
+        <h2>Device Status</h2>
+        <p><strong>Connection Status:</strong> <span id="connection_status">{{ connection_status }}</span></p>
+    </section>
+
+    <!-- Activity and Suggestions Section !!SENSOR DATA!! --> 
+    <section id="activity" class="section">
+        <h2>Activity</h2>
+        <p><strong>Last Touch:</strong> <span id="last_touch">{{ last_touch }}</span></p>
+        <p><strong>Last Loud Noise:</strong> <span id="last_noise">{{ last_noise }}</span></p>
+        <p><strong>Last Loud Noise Level:</strong> <span id="last_noise_level">{{ last_noise_level }}</span></p>
+        <p><strong>Highest Noise Level:</strong> <span id="highest_noise_level">{{ highest_noise_level }}</span></p>
+        <p><strong>IR:</strong> <span id="ir">{{ ir }}</span></p>
+        <p><strong>RED:</strong> <span id="red">{{ red }}</span></p>
+        <p><strong>Temperature:</strong> <span id="temperature">{{ temperature }}</span></p>
+        <p><strong>Humidity:</strong> <span id="humidity">{{ humidity }}</span></p>
+
+        <div id="suggestions">
+            <h3>Suggestions</h3>
+            <p>No recent suggestions.</p>
+        </div>
+        <button onclick="fetchSuggestions()">Fetch New Suggestions</button>
+    </section>
+
+    <!-- Messages Section -->
+    <section id="messages" class="section">
+        <h2>Messages</h2>
+        <div id="message-list">
+        </div>
+        <textarea id="new-message" placeholder="Write a message..."></textarea>
+        <button onclick="sendMessage()">Send Message</button>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="settings" class="section">
+        <h2>Settings</h2>
+        <form>
+            <label for="alert-threshold">Inactivity Alert Threshold (minutes):</label>
+            <input type="number" id="alert-threshold" value="30">
+            
+            <label for="notification-preferences">Notification Preferences:</label>
+            <select id="notification-preferences">
+                <option value="all">All Notifications</option>
+                <option value="important">Important Only</option>
+                <option value="none">None</option>
+            </select>
+            
+            <button type="button" onclick="saveSettings()">Save Settings</button>
+        </form>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 FamiLink | <a href="https://mqtt.org" target="_blank">MQTT Protocol</a> | <a href="localhost" target="_blank">Serverhost</a></p>
+    </footer>
+
+    <script>
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        function fetchSuggestions() {
+            // Fetch activity suggestions based on data
+            document.getElementById('suggestions').innerHTML = "<p>Suggestion: Go for a walk outside.</p>";
+        }
+
+        function sendMessage() {
+            // Logic to send a message
+            const message = document.getElementById('new-message').value;
+            document.getElementById('message-list').innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+            document.getElementById('new-message').value = "";
+        }
+
+        function saveSettings() {
+            // Logic to save user settings
+            alert("Settings saved!");
+        }
+
+        // Status Event Stream
+        const statusEventSource = new EventSource('/stream-stat');
+        statusEventSource.onmessage = function(event) {
+            const statDat = JSON.parse(event.data);
+            document.getElementById('connection_status').textContent = statDat.connection_status;
+        };
+
+        // Touch Event Stream
+        const touchEventSource = new EventSource('/stream-touch');
+        touchEventSource.onmessage = function(event) {
+            const touchData = JSON.parse(event.data);
+            document.getElementById('last_touch').textContent = touchData.last_touch;
+        };
+
+        // Noise Event Stream
+        const noiseEventSource = new EventSource('/stream-noise');
+        noiseEventSource.onmessage = function(event) {
+            const noiseData = JSON.parse(event.data);
+            document.getElementById('last_noise').textContent = noiseData.last_noise;
+            document.getElementById('last_noise_level').textContent = noiseData.last_noise_level;
+            document.getElementById('highest_noise_level').textContent = noiseData.highest_noise_level;
+        };
+
+        // Heart Event Stream
+        const heartEventSource = new EventSource('/stream-heart');
+        heartEventSource.onmessage = function(event) {
+            const heartData = JSON.parse(event.data);
+            document.getElementById('ir').textContent = heartData.ir;
+            document.getElementById('red').textContent = heartData.red;
+        };
+
+        // Humidity Event Stream
+        const humidEventSource = new EventSource('/stream-humid');
+        humidEventSource.onmessage = function(event) {
+            const humidData = JSON.parse(event.data);
+            document.getElementById('temperature').textContent = humidData.temperature;
+            document.getElementById('humidity').textContent = humidData.humidity;
+        };
+
+        touchEventSource.onerror = function() {
+            console.error('Error receiving touch events.');
+        };
+        noiseEventSource.onerror = function() {
+            console.error('Error receiving noise events.');
+        };
+        heartEventSource.onerror = function() {
+            console.error('Error receiving heart events.');
+        };
+        humidEventSource.onerror = function() {
+            console.error('Error receiving humidity events.');
+        };
+    </script>
+</body>
+</html>
