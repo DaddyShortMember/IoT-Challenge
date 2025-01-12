@@ -86,9 +86,9 @@ def handle_noise_data(data):
     global noise_updated, last_noise, last_noise_level, highest_noise_level
     if 'noise_level' in data:
         noise_updated = True
-        last_noise = data['timestamp']
         last_noise_level = data['noise_level']
         if last_noise_level > highest_noise_level:
+            last_noise = data['timestamp']
             highest_noise_level = last_noise_level
         print(f"Noise level: {data['noise_level']}")
 
