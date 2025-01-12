@@ -25,9 +25,8 @@ def read_sensor():
 # MQTT configuration
 broker_address = "broker.hivemq.com"
 mqtt_topic = "familink/sensors/heart"
-client = mqtt.Client("HeartRatePublisher")
-client.tls_set()
-client.connect(broker_address, 1883, 60)
+client = mqtt.Client()
+client.connect(broker_address, 1883)
 
 # Main program
 try:
@@ -36,7 +35,13 @@ try:
         ir, red = read_sensor()
         data = {"IR": ir, "Red": red}
         print(f"IR: {ir}, Red: {red}")
-        client.publish(mqtt_topic, str(data))
+        message = {
+                "device_id": "heart_sensor_1",
+                "ir": ir,
+                "red": red,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        }
+        client.publish(mqtt_topic, json.dumps(message))  # Publicar el mensaje en el tópico
         print(f"Données publiées : {data}")
         time.sleep(0.5)
 except KeyboardInterrupt:
